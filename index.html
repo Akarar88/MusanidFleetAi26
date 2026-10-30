@@ -1,0 +1,501 @@
+<title>Musanid Fleet AI</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: operations-console feel. Wide hero with a sample profit panel, then ruled sections that read like a fleet report. */
+:root{
+  --bg:#F5F9F7; --fg:#10261F; --muted:#52665E; --line:#D3E2DB; --card:#FFFFFF;
+  --accent:#0B6F61; --accent-ink:#FFFFFF; --mint:#E3F2EC; --deep:#0F2A2E; --deep-fg:#E8F4EF; --deep-muted:#9DB8AF;
+  --warn:#9A5B00; --warn-bg:#FBF0DC; --bad:#B3261E;
+  --display:"Bricolage Grotesque","IBM Plex Sans Arabic",system-ui,sans-serif;
+  --body:"IBM Plex Sans","IBM Plex Sans Arabic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B1714; --fg:#E6F1EC; --muted:#9DB3AA; --line:#1F332D; --card:#11221D;
+  --accent:#3FBF9F; --accent-ink:#06211A; --mint:#12302A; --deep:#0A1F22; --deep-fg:#E8F4EF; --deep-muted:#8FAEA4;
+  --warn:#F0B35A; --warn-bg:#2E2411; --bad:#FF8A80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1714; --fg:#E6F1EC; --muted:#9DB3AA; --line:#1F332D; --card:#11221D;
+  --accent:#3FBF9F; --accent-ink:#06211A; --mint:#12302A; --deep:#0A1F22; --deep-fg:#E8F4EF; --deep-muted:#8FAEA4;
+  --warn:#F0B35A; --warn-bg:#2E2411; --bad:#FF8A80; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 var(--body);padding-block:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow-x:hidden}
+h1,h2,h3{font-family:var(--display);line-height:1.12;margin:0;text-wrap:balance;letter-spacing:-.01em}
+:lang(ar) h1,:lang(ar) h2,:lang(ar) h3{letter-spacing:0;line-height:1.3}
+p{margin:0}
+a{color:inherit}
+.wrap{max-width:1120px;margin-inline:auto}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+/* header */
+header{display:flex;align-items:center;gap:20px;padding-block:20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:20px;text-decoration:none}
+.mark{width:34px;height:34px;border-radius:9px;background:var(--accent);display:grid;place-items:center}
+.mark svg{width:20px;height:20px}
+nav{display:flex;gap:22px;margin-inline-start:auto;flex-wrap:wrap}
+nav a{text-decoration:none;color:var(--muted);font-size:15px;font-weight:500}
+nav a:hover{color:var(--fg)}
+.tools{display:flex;gap:8px}
+.btn{font:600 15px var(--body);border:1.5px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:11px 20px;border-radius:10px;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--accent)}
+.btn.sm{padding:7px 14px;font-size:14px}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center;padding-block:48px 56px}
+.eyebrow{font:600 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+:lang(ar) .eyebrow{letter-spacing:0;text-transform:none;font-size:14px}
+.hero h1{font-size:clamp(36px,5.4vw,60px);margin-block:14px 18px;font-weight:700}
+.hero p.lead{font-size:18px;color:var(--muted);max-width:56ch}
+.cta{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
+
+.panel{background:var(--deep);color:var(--deep-fg);border-radius:18px;padding:22px;min-width:0;box-shadow:0 18px 50px -24px rgba(8,30,26,.55)}
+.panel .tag{display:flex;justify-content:space-between;font-size:12px;color:var(--deep-muted);margin-bottom:14px;gap:10px}
+.panel h3{font-size:16px;font-weight:600;margin-bottom:12px;font-family:var(--body)}
+.row{display:flex;justify-content:space-between;gap:12px;padding-block:10px;border-bottom:1px solid rgba(255,255,255,.1);font-size:15px}
+.row b{font-variant-numeric:tabular-nums;font-weight:600;direction:ltr;unicode-bidi:isolate}
+.row.total{border-bottom:0;font-size:17px;padding-top:14px}
+.row.total b{color:#6FE0C0;font-size:24px;font-family:var(--display)}
+.alerts{margin-top:14px;display:grid;gap:8px}
+.alert{background:rgba(255,255,255,.07);border-radius:10px;padding:10px 12px;font-size:13.5px;display:flex;gap:10px;align-items:flex-start}
+.dot{width:8px;height:8px;border-radius:50%;background:#F0B35A;margin-top:7px;flex:none}
+.dot.g{background:#6FE0C0}
+
+/* sections */
+section{padding-block:60px;border-top:1px solid var(--line)}
+.head{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:40px;margin-bottom:36px;align-items:end}
+.head h2{font-size:clamp(28px,3.6vw,42px);font-weight:700}
+.head p{color:var(--muted);font-size:17px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--card)}
+.stat{padding:26px 28px;min-width:0}
+.stat + .stat{border-inline-start:1px solid var(--line)}
+.stat .n{font:700 clamp(34px,4.4vw,52px)/1 var(--display);color:var(--accent);font-variant-numeric:tabular-nums}
+.stat .n{direction:ltr;unicode-bidi:isolate;text-align:start}
+:lang(ar) .stat .n{text-align:right}
+.stat .l{margin-top:10px;font-weight:500}
+.stat .s{color:var(--muted);font-size:14px;margin-top:2px}
+.src{color:var(--muted);font-size:13px;margin-top:14px}
+
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.card h3{font-size:19px;font-weight:600;margin-bottom:8px}
+.card p{color:var(--muted);font-size:15px}
+.note{margin-top:22px;background:var(--mint);border-radius:12px;padding:16px 20px;font-size:15px}
+
+.mods{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.mod{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;min-width:0}
+.mod .ic{width:42px;height:42px;border-radius:11px;background:var(--mint);display:grid;place-items:center;margin-bottom:16px}
+.mod .ic svg{width:22px;height:22px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mod h3{font-size:20px;font-weight:600;margin-bottom:6px}
+.mod p{color:var(--muted);font-size:15px}
+.mod.wide{grid-column:span 2;background:var(--deep);color:var(--deep-fg);border-color:transparent}
+.mod.wide p{color:var(--deep-muted)}
+.mod.wide .ic{background:rgba(255,255,255,.1)}
+.mod.wide .ic svg{stroke:#6FE0C0}
+
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:0;counter-reset:s}
+.step{position:relative;padding:0 18px 0 0;min-width:0}
+:lang(ar) .step{padding:0 0 0 18px}
+.step .no{width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font:700 15px var(--display);margin-bottom:14px;position:relative;z-index:1}
+.step::before{content:"";position:absolute;top:18px;inset-inline:36px 0;height:2px;background:var(--line)}
+.step:last-child::before{display:none}
+.step h3{font-size:18px;margin-bottom:6px;font-weight:600}
+.step p{font-size:14.5px;color:var(--muted)}
+.flow{margin-top:30px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 20px;font-size:15px;color:var(--muted)}
+
+/* calculator */
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:28px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:30px}
+.calc label{display:block;font-weight:500;margin-bottom:6px}
+.calc .ctl{margin-bottom:22px}
+.calc output{font-variant-numeric:tabular-nums;color:var(--accent);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.out{background:var(--mint);border-radius:14px;padding:24px;min-width:0}
+.out .big{font:700 clamp(30px,4vw,44px)/1.1 var(--display);font-variant-numeric:tabular-nums;color:var(--accent)}
+.out .lbl{color:var(--muted);font-size:14px;margin-bottom:4px}
+.out .sep{height:1px;background:var(--line);margin-block:18px}
+.out .loss{color:var(--bad)}
+
+.why{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--card)}
+.why > div{padding:24px 28px;min-width:0;border-bottom:1px solid var(--line)}
+.why > div:nth-child(odd){border-inline-end:1px solid var(--line)}
+.why > div:last-child{grid-column:1/-1;border-bottom:0;background:var(--mint)}
+.why h3{font-size:19px;font-weight:600;margin-bottom:6px}
+.why p{color:var(--muted);font-size:15px}
+.why > div:last-child p{color:var(--fg)}
+
+.v2030{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.v2030 .card{padding:20px}
+.v2030 h3{font-size:17px}
+
+.people{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.person{display:flex;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;min-width:0}
+.av{width:42px;height:42px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font:700 14px var(--display);flex:none}
+.person b{display:block;font-weight:600;line-height:1.3}
+.person span{font-size:14px;color:var(--muted)}
+.person.open .av{background:transparent;color:var(--accent);border:1.5px dashed var(--accent)}
+
+.contact{background:var(--deep);color:var(--deep-fg);border-radius:20px;padding:44px;display:grid;grid-template-columns:1.2fr .8fr;gap:30px;align-items:center;margin-block:10px 0}
+.contact h2{font-size:clamp(28px,3.6vw,40px);font-weight:700}
+.contact p{color:var(--deep-muted);margin-top:10px;max-width:50ch}
+.mail{background:rgba(255,255,255,.08);border-radius:14px;padding:20px;min-width:0}
+.mail small{display:block;color:var(--deep-muted);margin-bottom:6px}
+.mail code{font:600 17px var(--body);word-break:break-all;user-select:all;display:block;margin-bottom:14px}
+.mail .btn{background:#6FE0C0;border-color:#6FE0C0;color:#06211A}
+.mail .btn.ghost{background:transparent;color:var(--deep-fg);border-color:rgba(255,255,255,.3)}
+.mail .acts{display:flex;gap:8px;flex-wrap:wrap}
+
+footer{padding-block:30px 40px;color:var(--muted);font-size:14px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+footer .legal{max-width:70ch}
+
+@media (max-width:960px){
+  .hero,.head,.calc,.contact{grid-template-columns:1fr}
+  .grid4,.mods{grid-template-columns:repeat(2,1fr)}
+  .grid5,.v2030{grid-template-columns:repeat(2,1fr)}
+  .mod.wide{grid-column:span 2}
+  .steps{grid-template-columns:1fr;gap:22px}
+  .step::before{display:none}
+  .people{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:620px){
+  nav{order:3;width:100%;margin:0;gap:16px}
+  .stats,.why{grid-template-columns:1fr}
+  .stat + .stat{border-inline-start:0;border-top:1px solid var(--line)}
+  .why > div:nth-child(odd){border-inline-end:0}
+  .grid4,.mods,.grid5,.v2030,.people{grid-template-columns:1fr}
+  .mod.wide{grid-column:auto}
+  .contact{padding:28px}
+  .calc{padding:20px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+  <header>
+    <a class="brand" href="#top" id="top">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17V7l8 6 8-6v10"/></svg></span>
+      <span>Musanid <span style="color:var(--accent)">Fleet AI</span></span>
+    </a>
+    <nav aria-label="Main">
+      <a href="#problem" data-i="nav_problem"></a>
+      <a href="#solution" data-i="nav_solution"></a>
+      <a href="#how" data-i="nav_how"></a>
+      <a href="#vision" data-i="nav_vision"></a>
+      <a href="#contact" data-i="nav_contact"></a>
+    </nav>
+    <div class="tools">
+      <button class="btn ghost sm" id="lang" type="button" aria-label="Switch language">العربية</button>
+    </div>
+  </header>
+
+  <main>
+  <div class="hero">
+    <div>
+      <div class="eyebrow" data-i="eyebrow"></div>
+      <h1 data-i="h1"></h1>
+      <p class="lead" data-i="lead"></p>
+      <div class="cta">
+        <a class="btn" href="#contact" data-i="cta1"></a>
+        <a class="btn ghost" href="#how" data-i="cta2"></a>
+      </div>
+    </div>
+    <div class="panel" aria-label="Sample view">
+      <div class="tag"><span data-i="p_tag1"></span><span data-i="p_tag2"></span></div>
+      <h3 data-i="p_title"></h3>
+      <div class="row"><span data-i="p_r1"></span><b>SAR 8,558</b></div>
+      <div class="row"><span data-i="p_r2"></span><b>(SAR 7,446)</b></div>
+      <div class="row total"><span data-i="p_r3"></span><b>SAR 1,112</b></div>
+      <div class="alerts">
+        <div class="alert"><span class="dot"></span><span data-i="p_a1"></span></div>
+        <div class="alert"><span class="dot"></span><span data-i="p_a2"></span></div>
+        <div class="alert"><span class="dot g"></span><span data-i="p_a3"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <section id="market" style="padding-top:44px">
+    <div class="stats">
+      <div class="stat"><div class="n">290M+</div><div class="l" data-i="s1l"></div><div class="s" data-i="s1s"></div></div>
+      <div class="stat"><div class="n">27.2%</div><div class="l" data-i="s2l"></div><div class="s" data-i="s2s"></div></div>
+      <div class="stat"><div class="n">442K</div><div class="l" data-i="s3l"></div><div class="s" data-i="s3s"></div></div>
+    </div>
+    <p class="src" data-i="s_src"></p>
+    <div class="note" data-i="s_note"></div>
+  </section>
+
+  <section id="problem">
+    <div class="head"><h2 data-i="pr_h"></h2><p data-i="pr_p"></p></div>
+    <div class="grid4">
+      <div class="card"><h3 data-i="pr1h"></h3><p data-i="pr1p"></p></div>
+      <div class="card"><h3 data-i="pr2h"></h3><p data-i="pr2p"></p></div>
+      <div class="card"><h3 data-i="pr3h"></h3><p data-i="pr3p"></p></div>
+      <div class="card"><h3 data-i="pr4h"></h3><p data-i="pr4p"></p></div>
+    </div>
+    <div class="note" data-i="pr_note"></div>
+  </section>
+
+  <section id="solution">
+    <div class="head"><h2 data-i="so_h"></h2><p data-i="so_p"></p></div>
+    <div class="mods">
+      <div class="mod wide"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 8-9"/><path d="M15 6h5v5"/></svg></div><h3 data-i="m1h"></h3><p data-i="m1p"></p></div>
+      <div class="mod"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></div><h3 data-i="m2h"></h3><p data-i="m2p"></p></div>
+      <div class="mod"><div class="ic"><svg viewBox="0 0 24 24"><path d="M7 4h10v16l-2.5-1.5L12 20l-2.5-1.5L7 20z"/><path d="M10 9h4M10 13h4"/></svg></div><h3 data-i="m3h"></h3><p data-i="m3p"></p></div>
+      <div class="mod"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div><h3 data-i="m4h"></h3><p data-i="m4p"></p></div>
+      <div class="mod"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg></div><h3 data-i="m5h"></h3><p data-i="m5p"></p></div>
+    </div>
+    <p class="src" data-i="so_principle"></p>
+  </section>
+
+  <section id="how">
+    <div class="head"><h2 data-i="ho_h"></h2><p data-i="ho_p"></p></div>
+    <div class="steps">
+      <div class="step"><div class="no">1</div><h3 data-i="st1h"></h3><p data-i="st1p"></p></div>
+      <div class="step"><div class="no">2</div><h3 data-i="st2h"></h3><p data-i="st2p"></p></div>
+      <div class="step"><div class="no">3</div><h3 data-i="st3h"></h3><p data-i="st3p"></p></div>
+      <div class="step"><div class="no">4</div><h3 data-i="st4h"></h3><p data-i="st4p"></p></div>
+      <div class="step"><div class="no">5</div><h3 data-i="st5h"></h3><p data-i="st5p"></p></div>
+    </div>
+    <div class="flow" data-i="ho_flow"></div>
+  </section>
+
+  <section id="calc">
+    <div class="head"><h2 data-i="ca_h"></h2><p data-i="ca_p"></p></div>
+    <div class="calc">
+      <div>
+        <div class="ctl"><label for="riders"><span data-i="ca_riders"></span>: <output id="ridersOut">100</output></label>
+          <input id="riders" type="range" min="20" max="1000" step="10" value="100"></div>
+        <div class="ctl"><label for="leak"><span data-i="ca_leak"></span>: <output id="leakOut">1</output>%</label>
+          <input id="leak" type="range" min="0" max="5" step="0.5" value="1"></div>
+        <p class="src" data-i="ca_assume"></p>
+      </div>
+      <div class="out" aria-live="polite">
+        <div class="lbl" data-i="ca_o1"></div><div class="big" id="contrib">SAR 111,200</div>
+        <div class="sep"></div>
+        <div class="lbl" data-i="ca_o2"></div><div class="big loss" id="loss">SAR 8,558</div>
+        <div class="lbl" style="margin-top:8px" id="share"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="why">
+    <div class="head"><h2 data-i="wy_h"></h2><p data-i="wy_p"></p></div>
+    <div class="why">
+      <div><h3 data-i="w1h"></h3><p data-i="w1p"></p></div>
+      <div><h3 data-i="w2h"></h3><p data-i="w2p"></p></div>
+      <div><h3 data-i="w3h"></h3><p data-i="w3p"></p></div>
+      <div><h3 data-i="w4h"></h3><p data-i="w4p"></p></div>
+      <div><h3 data-i="w5h"></h3><p data-i="w5p"></p></div>
+      <div><p data-i="w_def"></p></div>
+    </div>
+  </section>
+
+  <section id="vision">
+    <div class="head"><h2 data-i="vi_h"></h2><p data-i="vi_p"></p></div>
+    <div class="v2030">
+      <div class="card"><h3 data-i="v1h"></h3><p data-i="v1p"></p></div>
+      <div class="card"><h3 data-i="v2h"></h3><p data-i="v2p"></p></div>
+      <div class="card"><h3 data-i="v3h"></h3><p data-i="v3p"></p></div>
+      <div class="card"><h3 data-i="v4h"></h3><p data-i="v4p"></p></div>
+      <div class="card"><h3 data-i="v5h"></h3><p data-i="v5p"></p></div>
+    </div>
+    <p class="src" data-i="vi_measure"></p>
+  </section>
+
+  <section id="team">
+    <div class="head"><h2 data-i="te_h"></h2><p data-i="te_p"></p></div>
+    <div class="people">
+      <div class="person"><div class="av">AB</div><div><b>Ahmad Bassam</b><span data-i="t1"></span></div></div>
+      <div class="person"><div class="av">AO</div><div><b data-i="n2"></b><span data-i="t2"></span></div></div>
+      <div class="person"><div class="av">AM</div><div><b data-i="n3"></b><span data-i="t3"></span></div></div>
+      <div class="person"><div class="av">MM</div><div><b data-i="n4"></b><span data-i="t4"></span></div></div>
+      <div class="person"><div class="av">GM</div><div><b data-i="n5"></b><span data-i="t5"></span></div></div>
+      <div class="person open"><div class="av">+</div><div><b data-i="t6"></b><span data-i="t6s"></span></div></div>
+    </div>
+  </section>
+
+  <section id="contact" style="border-top:0;padding-top:20px">
+    <div class="contact">
+      <div><h2 data-i="co_h"></h2><p data-i="co_p"></p></div>
+      <div class="mail">
+        <small data-i="co_label"></small>
+        <code id="email">ahmedkarar@zoho.com</code>
+        <div class="acts">
+          <button class="btn sm" id="copy" type="button" data-i="co_copy"></button>
+          <a class="btn ghost sm" href="mailto:ahmedkarar@zoho.com" data-i="co_open"></a>
+        </div>
+      </div>
+    </div>
+  </section>
+  </main>
+
+  <footer>
+    <div class="legal" data-i="foot"></div>
+    <div>Riyadh, Saudi Arabia</div>
+  </footer>
+</div>
+
+<script>
+var T={
+en:{
+nav_problem:"Problem",nav_solution:"Platform",nav_how:"How it works",nav_vision:"Vision 2030",nav_contact:"Contact",
+eyebrow:"AI operating layer for delivery fleets",
+h1:"One intelligence layer above your delivery fleet",
+lead:"Musanid Fleet AI brings platform reports, rider records and vehicle costs into one place, so fleet operators see real profit per rider, shift and platform, and catch settlement leakage early.",
+cta1:"Request a demo",cta2:"See how it works",
+p_tag1:"Rider profitability",p_tag2:"Sample view",p_title:"Monthly figures per rider",
+p_r1:"Platform settlement",p_r2:"Rider + fleet cost",p_r3:"Contribution per rider",
+p_a1:"Iqama expires in 14 days: rider 0231",p_a2:"Possible missing bonus found in last settlement",p_a3:"Zone B, 7 to 10 PM: expected higher order density",
+s1l:"fulfilled delivery orders",s1s:"Saudi Arabia, 2024",
+s2l:"year-on-year growth",s2s:"delivery activity",
+s3l:"active drivers",s3s:"140K Saudi and 302K non-Saudi",
+s_src:"Source: Saudi General Authority for Statistics, Warehousing and Logistics Statistics 2024 (published Dec 2025).",
+s_note:"As order volume and rider networks expand, fleet operators need tighter control of unit economics, workforce compliance, settlement accuracy and platform-by-platform performance.",
+pr_h:"The problem is not one app. It is fragmentation.",
+pr_p:"A typical operator manages people, vehicles, documents, targets and settlements across several systems, and joins them by hand.",
+pr1h:"Fragmented data",pr1p:"Platform reports, HR files, vehicle records and WhatsApp sit in separate places.",
+pr2h:"Weak unit economics",pr2p:"Managers see orders and revenue, but not true profit per rider, shift or platform.",
+pr3h:"Settlement leakage",pr3p:"Bonuses, deductions, rejects and platform settlements are hard to reconcile at scale.",
+pr4h:"Compliance risk",pr4p:"Iqama, vehicle registration, insurance and operational documents can expire unnoticed.",
+pr_note:"Today most operators work from Excel, exported platform reports and supervisor experience. The result is delayed decisions and preventable cost leakage.",
+so_h:"Five modules, one view of the fleet",
+so_p:"Start with report uploads. Add approved API integrations as platform access becomes available.",
+m1h:"Profit Optimizer",m1p:"Real profit by rider, shift, city and platform, after platform settlement, salary, fuel, vehicle cost, maintenance, bonuses and penalties.",
+m2h:"Smart Allocation",m2p:"Recommends where and when to deploy rider capacity.",
+m3h:"Settlement Reconciliation",m3p:"Compares contract logic, reports, bonuses and deductions.",
+m4h:"Compliance Vault",m4p:"Tracks rider and vehicle documents with proactive alerts.",
+m5h:"Driver AI Copilot",m5p:"Arabic and English self-service for targets, earnings, shifts and policies.",
+so_principle:"Integration principle: official APIs or approved data exports only. No screen scraping and no automated order acceptance.",
+ho_h:"Report first, API ready",ho_p:"The platform delivers value before deep integrations are available.",
+st1h:"Ingest",st1p:"Upload platform settlement and performance reports, or connect approved APIs.",
+st2h:"Normalize",st2p:"Map riders, orders, bonuses, deductions, shifts and vehicle costs.",
+st3h:"Calculate",st3p:"Build profit, utilization, compliance and settlement KPIs.",
+st4h:"Recommend",st4p:"AI suggests rider allocation and flags anomalies and leakage.",
+st5h:"Act",st5p:"Supervisor dashboard, rider mobile experience and finance export.",
+ho_flow:"Platform report or API  →  Musanid data layer  →  unit economics and AI  →  manager actions and rider transparency",
+ca_h:"What a small error costs a fleet",ca_p:"Orders are visible. True contribution margin often is not. Move the sliders to see how a small settlement error adds up.",
+ca_riders:"Riders in the fleet",ca_leak:"Settlement leakage",
+ca_assume:"Illustrative example based on SAR 8,558 settlement and SAR 7,446 rider and fleet cost per rider per month. Your numbers will differ.",
+ca_o1:"Monthly contribution",ca_o2:"Lost to leakage each month",
+wy_h:"Optimize profit, not only fleet administration",wy_p:"The product focuses on decisions that protect contribution margin, cash recovery and supervisor time.",
+w1h:"Full-cost rider profitability",w1p:"Contribution per rider after settlement, salary, fuel, vehicle cost, maintenance, bonuses and penalties.",
+w2h:"Contract-aware rules engine",w2p:"Each platform's target, bonus, deduction and settlement logic is encoded once, so finance and operations use the same rules.",
+w3h:"Cross-platform capacity optimizer",w3p:"Rider capacity goes where expected contribution is highest, not only where order volume is.",
+w4h:"Settlement leakage detection",w4p:"Platform reports are matched to rider activity and company costs, flagging missing bonuses, abnormal deductions and mismatches.",
+w5h:"Bilingual, role-based AI copilot",w5p:"Arabic and English support for riders, supervisors and finance teams, using approved company policies and live fleet data.",
+w_def:"Defensibility over time: live pilot data, platform-rule configuration, settlement history, operator workflows and Saudi Arabic operating knowledge.",
+vi_h:"Specific alignment with Saudi Vision 2030",vi_p:"The link is operational and measurable, not generic.",
+v1h:"Digital economy",v1p:"Digitizes fragmented fleet workflows and turns reports into real-time operating decisions.",
+v2h:"Logistics efficiency",v2p:"Improves rider utilization, financial control and service reliability in last-mile operations.",
+v3h:"Entrepreneurship and SMEs",v3p:"A scalable B2B platform for smaller fleet operators that cannot build their own technology stack.",
+v4h:"Technology localization",v4p:"Product, data models and operational know-how developed inside the Kingdom.",
+v5h:"Quality and compliance",v5p:"Helps operators track documentation, exceptions and operational readiness.",
+vi_measure:"Impact is measured through cost per order, rider utilization, settlement accuracy, compliance incidents and operator time saved.",
+te_h:"The team",te_p:"Founder, operating team and the technical roles we are hiring to launch the MVP.",
+t1:"Founder",n2:"Ahmed Osman Alkarar Mustafa",t2:"Co-Founder and CEO",n3:"Ameen Mohammed Humaida",t3:"Fleet Operations Lead",
+n4:"Murad Mustafa",t4:"Commercial and Data Lead",n5:"Galal Alzain Mohamedali",t5:"Business Admin and Compliance",
+t6:"Technical Partner / CTO",t6s:"Hiring: platform and integrations",
+co_h:"See your fleet's real profit per rider",co_p:"We are starting pilots with delivery fleet operators in Saudi Arabia. Tell us your fleet size and the platforms you work with.",
+co_label:"Write to us",co_copy:"Copy address",co_open:"Open email app",co_copied:"Copied",
+foot:"Musanid Fleet AI is a pre-launch product. Figures marked as a sample or illustration are examples, not customer data.",
+cur:"SAR",ca_share:function(p){return p+"% of monthly contribution"}
+},
+ar:{
+nav_problem:"المشكلة",nav_solution:"المنصة",nav_how:"آلية العمل",nav_vision:"رؤية 2030",nav_contact:"تواصل معنا",
+eyebrow:"طبقة تشغيل بالذكاء الاصطناعي لأساطيل التوصيل",
+h1:"طبقة ذكاء واحدة فوق أسطول التوصيل",
+lead:"تجمع مساند فليت إيه آي تقارير المنصات وسجلات المناديب وتكاليف المركبات في مكان واحد، ليعرف مشغّل الأسطول الربح الحقيقي لكل مندوب وكل وردية وكل منصة، ويكتشف تسريب التسويات مبكراً.",
+cta1:"اطلب عرضاً تجريبياً",cta2:"شاهد آلية العمل",
+p_tag1:"ربحية المناديب",p_tag2:"عرض تجريبي",p_title:"الأرقام الشهرية لكل مندوب",
+p_r1:"تسوية المنصة",p_r2:"تكلفة المندوب والأسطول",p_r3:"هامش المساهمة لكل مندوب",
+p_a1:"تنتهي الإقامة خلال 14 يوماً: المندوب 0231",p_a2:"تم رصد مكافأة قد تكون مفقودة في آخر تسوية",p_a3:"المنطقة B من 7 إلى 10 مساءً: كثافة طلبات متوقعة أعلى",
+s1l:"طلب توصيل منفّذ",s1s:"المملكة العربية السعودية، 2024",
+s2l:"نمو سنوي",s2s:"في نشاط التوصيل",
+s3l:"سائق نشط",s3s:"140 ألف سعودي و302 ألف غير سعودي",
+s_src:"المصدر: الهيئة العامة للإحصاء، إحصاءات التخزين والخدمات اللوجستية 2024 (نُشرت في ديسمبر 2025).",
+s_note:"مع نمو حجم الطلبات وشبكات المناديب، يحتاج مشغّلو الأساطيل إلى تحكم أدق في اقتصاديات الوحدة والامتثال الوظيفي ودقة التسويات وأداء كل منصة.",
+pr_h:"المشكلة ليست تطبيقاً واحداً، بل التشتت.",
+pr_p:"يدير المشغّل عادةً الأفراد والمركبات والمستندات والأهداف والتسويات عبر عدة أنظمة، ويربطها يدوياً.",
+pr1h:"بيانات مشتتة",pr1p:"تقارير المنصات وملفات الموارد البشرية وسجلات المركبات وواتساب في أماكن منفصلة.",
+pr2h:"اقتصاديات وحدة ضعيفة",pr2p:"يرى المديرون الطلبات والإيرادات، لكن لا يرون الربح الحقيقي لكل مندوب أو وردية أو منصة.",
+pr3h:"تسريب في التسويات",pr3p:"يصعب مطابقة المكافآت والخصومات والطلبات المرفوضة وتسويات المنصات على نطاق واسع.",
+pr4h:"مخاطر الامتثال",pr4p:"قد تنتهي الإقامة وتسجيل المركبة والتأمين والمستندات التشغيلية دون أن يلاحظ أحد.",
+pr_note:"يعتمد معظم المشغّلين اليوم على إكسل وتقارير المنصات المصدّرة وخبرة المشرفين، والنتيجة قرارات متأخرة وتكاليف كان يمكن تجنبها.",
+so_h:"خمس وحدات، ورؤية واحدة للأسطول",
+so_p:"نبدأ برفع التقارير، ثم نضيف تكاملات واجهات البرمجة المعتمدة عند توفر الوصول من المنصات.",
+m1h:"محسّن الربحية",m1p:"الربح الحقيقي لكل مندوب ووردية ومدينة ومنصة، بعد تسوية المنصة والراتب والوقود وتكلفة المركبة والصيانة والمكافآت والغرامات.",
+m2h:"التوزيع الذكي",m2p:"يوصي بمكان وزمان توزيع طاقة المناديب.",
+m3h:"مطابقة التسويات",m3p:"يقارن منطق العقود بالتقارير والمكافآت والخصومات.",
+m4h:"خزنة الامتثال",m4p:"يتتبع مستندات المناديب والمركبات مع تنبيهات استباقية.",
+m5h:"مساعد المندوب الذكي",m5p:"خدمة ذاتية بالعربية والإنجليزية للأهداف والأرباح والورديات والسياسات.",
+so_principle:"مبدأ التكامل: واجهات برمجة رسمية أو ملفات بيانات معتمدة فقط، دون سحب بيانات من الشاشات ودون قبول آلي للطلبات.",
+ho_h:"نبدأ بالتقارير ونجهز لواجهات البرمجة",ho_p:"تقدم المنصة قيمة قبل توفر التكاملات العميقة.",
+st1h:"الإدخال",st1p:"ارفع تقارير التسوية والأداء من المنصات، أو اربط واجهات برمجة معتمدة.",
+st2h:"التوحيد",st2p:"ربط المناديب والطلبات والمكافآت والخصومات والورديات وتكاليف المركبات.",
+st3h:"الحساب",st3p:"بناء مؤشرات الربحية والاستخدام والامتثال والتسويات.",
+st4h:"التوصية",st4p:"يقترح الذكاء الاصطناعي توزيع المناديب وينبّه إلى الشذوذ والتسريب.",
+st5h:"التنفيذ",st5p:"لوحة للمشرفين وتجربة جوال للمناديب وتصدير للمالية.",
+ho_flow:"تقرير المنصة أو واجهة البرمجة  ←  طبقة بيانات مساند  ←  اقتصاديات الوحدة والذكاء الاصطناعي  ←  إجراءات المديرين وشفافية المناديب",
+ca_h:"كم يكلّف الخطأ الصغير أسطولاً؟",ca_p:"الطلبات ظاهرة، أما هامش المساهمة الحقيقي فغالباً لا. حرّك المؤشرات لترى كيف يتراكم خطأ صغير في التسويات.",
+ca_riders:"عدد المناديب في الأسطول",ca_leak:"نسبة التسريب في التسويات",
+ca_assume:"مثال توضيحي مبني على تسوية 8,558 ريالاً وتكلفة مندوب وأسطول 7,446 ريالاً لكل مندوب شهرياً. أرقامك ستختلف.",
+ca_o1:"هامش المساهمة الشهري",ca_o2:"الخسارة الشهرية بسبب التسريب",
+wy_h:"نعظّم الربح، لا إدارة الأسطول فقط",wy_p:"يركّز المنتج على القرارات التي تحمي هامش المساهمة واسترداد النقد ووقت المشرفين.",
+w1h:"ربحية المندوب بالتكلفة الكاملة",w1p:"هامش المساهمة لكل مندوب بعد التسوية والراتب والوقود وتكلفة المركبة والصيانة والمكافآت والغرامات.",
+w2h:"محرك قواعد يفهم العقود",w2p:"تُدرج أهداف كل منصة ومكافآتها وخصوماتها ومنطق تسويتها مرة واحدة، فتعمل المالية والعمليات بالقواعد نفسها.",
+w3h:"محسّن الطاقة بين المنصات",w3p:"تتجه طاقة المناديب إلى حيث الهامش المتوقع الأعلى، لا إلى حيث حجم الطلبات فقط.",
+w4h:"كشف تسريب التسويات",w4p:"تُطابق تقارير المنصات مع نشاط المناديب وتكاليف الشركة، وتُرصد المكافآت المفقودة والخصومات غير المعتادة وحالات عدم التطابق.",
+w5h:"مساعد ذكي ثنائي اللغة حسب الدور",w5p:"دعم بالعربية والإنجليزية للمناديب والمشرفين والمالية، باستخدام سياسات الشركة المعتمدة وبيانات الأسطول الحية.",
+w_def:"ميزة تتعزز مع الوقت: بيانات تجارب حية، وإعدادات قواعد المنصات، وتاريخ التسويات، وسير عمل المشغّلين، والمعرفة التشغيلية بالسوق السعودي.",
+vi_h:"مواءمة محددة مع رؤية السعودية 2030",vi_p:"الارتباط تشغيلي وقابل للقياس، وليس عاماً.",
+v1h:"الاقتصاد الرقمي",v1p:"رقمنة سير العمل المتشتت للأساطيل وتحويل التقارير إلى قرارات تشغيلية لحظية.",
+v2h:"كفاءة الخدمات اللوجستية",v2p:"تحسين استخدام المناديب والضبط المالي وموثوقية الخدمة في التوصيل الأخير.",
+v3h:"ريادة الأعمال والمنشآت الصغيرة",v3p:"منصة قابلة للتوسع للأساطيل الأصغر التي لا تستطيع بناء منظومتها التقنية بنفسها.",
+v4h:"توطين التقنية",v4p:"تطوير المنتج ونماذج البيانات والمعرفة التشغيلية داخل المملكة.",
+v5h:"الجودة والامتثال",v5p:"مساعدة المشغّلين على تتبع المستندات والاستثناءات والجاهزية التشغيلية.",
+vi_measure:"يُقاس الأثر بتكلفة الطلب، واستخدام المناديب، ودقة التسويات، وحوادث الامتثال، ووقت المشغّل الموفَّر.",
+te_h:"الفريق",te_p:"المؤسس وفريق التشغيل والأدوار التقنية التي نوظّفها لإطلاق النسخة الأولى.",
+t1:"المؤسس",n2:"أحمد عثمان الكرار مصطفى",t2:"شريك مؤسس ورئيس تنفيذي",n3:"أمين محمد حميدة",t3:"قائد عمليات الأسطول",
+n4:"مراد مصطفى",t4:"قائد الأعمال والبيانات",n5:"جلال الزين محمد علي",t5:"الإدارة والامتثال",
+t6:"الشريك التقني / المدير التقني",t6s:"نبحث عنه: المنصة والتكاملات",
+co_h:"اعرف الربح الحقيقي لكل مندوب في أسطولك",co_p:"نبدأ تجارب مع مشغّلي أساطيل التوصيل في السعودية. أخبرنا بحجم أسطولك والمنصات التي تعمل معها.",
+co_label:"راسلنا",co_copy:"نسخ العنوان",co_open:"فتح البريد",co_copied:"تم النسخ",
+foot:"مساند فليت إيه آي منتج قبل الإطلاق. الأرقام المشار إليها كعرض تجريبي أو توضيحي هي أمثلة وليست بيانات عملاء.",
+cur:"ريال",ca_share:function(p){return p+"% من هامش المساهمة الشهري"}
+}};
+var lang="en";
+try{var s=localStorage.getItem("lang");if(s==="ar"||s==="en")lang=s}catch(e){}
+function fmt(n){return Math.round(n).toLocaleString(lang==="ar"?"en-US":"en-US")}
+function render(){
+  var d=T[lang];
+  document.documentElement.lang=lang;document.documentElement.dir=lang==="ar"?"rtl":"ltr";
+  document.querySelectorAll("[data-i]").forEach(function(el){var v=d[el.getAttribute("data-i")];if(typeof v==="string")el.textContent=v});
+  document.getElementById("lang").textContent=lang==="ar"?"English":"العربية";
+  calc();
+}
+function calc(){
+  var d=T[lang],r=+document.getElementById("riders").value,l=+document.getElementById("leak").value;
+  var per=8558-7446,c=r*per,loss=r*8558*l/100;
+  document.getElementById("ridersOut").textContent=fmt(r);
+  document.getElementById("leakOut").textContent=l;
+  var cur=d.cur;
+  document.getElementById("contrib").textContent=lang==="ar"?fmt(c)+" "+cur:cur+" "+fmt(c);
+  document.getElementById("loss").textContent=lang==="ar"?fmt(loss)+" "+cur:cur+" "+fmt(loss);
+  document.getElementById("share").textContent=d.ca_share((c?loss/c*100:0).toFixed(1));
+}
+document.getElementById("lang").addEventListener("click",function(){
+  lang=lang==="en"?"ar":"en";try{localStorage.setItem("lang",lang)}catch(e){}render()});
+document.getElementById("riders").addEventListener("input",calc);
+document.getElementById("leak").addEventListener("input",calc);
+document.getElementById("copy").addEventListener("click",function(){
+  var b=this,t=document.getElementById("email").textContent;
+  function done(){var o=T[lang].co_copy;b.textContent=T[lang].co_copied;setTimeout(function(){b.textContent=T[lang].co_copy},1500)}
+  function sel(){var r=document.createRange();r.selectNodeContents(document.getElementById("email"));var s=getSelection();s.removeAllRanges();s.addRange(r)}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,sel)}else{sel()}
+});
+render();
+</script>
